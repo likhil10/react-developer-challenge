@@ -1,10 +1,12 @@
-import React from "react";
+import React, {useState} from "react";
 import "./App.css";
 import axios from 'axios';
+import Modal from "./components/Modal";
+
 
 const url = "https://data.nasa.gov/resource/gh4g-9sfh.json";
 const useSortableData = (items, config = null) => {
-    const [sortConfig, setSortConfig] = React.useState(config);
+    const [sortConfig, setSortConfig] = useState(config);
 
     const sortedItems = React.useMemo(() => {
         let sortableItems = [...items];
@@ -37,13 +39,12 @@ const useSortableData = (items, config = null) => {
     return { items: sortedItems, requestSort, sortConfig };
 };
 
-const ProductTable = (props) => {
-    const { items, requestSort, sortConfig } = useSortableData(props.products);
+const Table = (props) => {
+    const { items, requestSort, sortConfig } = useSortableData(props.items);
     const { flag } = props;
-    let value = flag.value;
+    const setTextModal = props.setTextModal;
     let f = false;
     let i = 0, j =0;
-    console.log("hi man", props);
     const getClassNamesFor = (name) => {
         if (!sortConfig) {
             return;
@@ -61,7 +62,6 @@ const ProductTable = (props) => {
                     }
                 } else if (flag.value === "name") {
                     if (items[i].name === nameKey) {
-                        console.log("hi man", items[i].name, nameKey, i);
                         f = true;
                         return i;
                     }
@@ -142,7 +142,7 @@ const ProductTable = (props) => {
             </thead>
             <tbody>
             {f && flag.flag ?
-                <tr key={items[j].id}>
+                <tr key={items[j].id} onClick={()=>setTextModal(items[j])}>
                     <td>{items[j].id}</td>
                     <td>{items[j].name}</td>
                     <td>{items[j].nametype}</td>
@@ -153,7 +153,7 @@ const ProductTable = (props) => {
                     null
                     :
                 items.map((item) => (
-                    <tr key={item.id}>
+                    <tr key={item.id} onClick={()=>setTextModal(item)}>
                         <td>{item.id}</td>
                         <td>{item.name}</td>
                         <td>{item.nametype}</td>
@@ -170,10 +170,16 @@ const ProductTable = (props) => {
 
 
 export default function App() {
-    let [apiRes, setApiRes] = React.useState([]);
-    let [value, setValue] = React.useState(null);
-    let [text, setText] = React.useState(null);
-    let [flag, setFlag] = React.useState(false);
+    let [apiRes, setApiRes] = useState([]);
+    let [value, setValue] = useState(null);
+    let [text, setText] = useState(null);
+    let [flag, setFlag] = useState(false);
+    const [isShowing, setIsShowing] = useState(false);
+    let [modalText, setModalText] = useState([]);
+
+    function toggle() {
+        setIsShowing(!isShowing);
+    }
 
 
     React.useEffect(() => {
@@ -203,13 +209,18 @@ export default function App() {
         }
     };
 
+    const setTextModal = (items) => {
+        setModalText(items);
+        toggle();
+    };
+
     return (
         <div className="App">
             <select
                 id="select"
                 onChange={handleValueChange}
             >
-                <option selected value="" />
+                <option value="" />
                 <option value="id">ID</option>
                 <option value="name">Name</option>
                 <option value="nametype">NameType</option>
@@ -222,9 +233,15 @@ export default function App() {
                 onChange={handleTextChange}
             />
             <button type="button" onClick={handleClick}>Go</button>
-            <ProductTable
-                products={apiRes}
+            <Modal
+                isShowing={isShowing}
+                hide={toggle}
+                text={modalText}
+            />
+            <Table
+                items={apiRes}
                 flag={flag? {"value": value,"text": text, "flag":true} : {"flag": false}}
+                setTextModal={setTextModal}
             />
         </div>
     );
