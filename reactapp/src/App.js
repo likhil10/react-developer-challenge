@@ -1,38 +1,133 @@
-import React, { Component } from 'react';
-
+import React from "react";
+import "./App.css";
+import axios from 'axios';
 
 const url = "https://data.nasa.gov/resource/gh4g-9sfh.json";
-class App extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            items: [],
-        };
-        console.log("hello from constructor", this.state.items);
-    }
+const useSortableData = (items, config = null) => {
+    const [sortConfig, setSortConfig] = React.useState(config);
 
-    componentDidMount() {
-        fetch(url).then(res => res.json())
-            .then(
-                (result) => {
-                    this.setState({
-                        items: result
-                    }, ()=> console.log("hello",this.state.items));
-                    console.log("res", result);
-                },
-                (error) => {
-                    console.log("error", error);
+    const sortedItems = React.useMemo(() => {
+        let sortableItems = [...items];
+        if (sortConfig !== null) {
+            sortableItems.sort((a, b) => {
+                if (a[sortConfig.key] < b[sortConfig.key]) {
+                    return sortConfig.direction === "ascending" ? -1 : 1;
                 }
-            )
-    }
+                if (a[sortConfig.key] > b[sortConfig.key]) {
+                    return sortConfig.direction === "ascending" ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [items, sortConfig]);
 
-    render() {
-        console.log("hello from render");
-        return (
-            <div>
-                <p>Hello world</p>
-            </div>
-        );
-    }
+    const requestSort = (key) => {
+        let direction = "ascending";
+        if (
+            sortConfig &&
+            sortConfig.key === key &&
+            sortConfig.direction === "ascending"
+        ) {
+            direction = "descending";
+        }
+        setSortConfig({ key, direction });
+    };
+
+    return { items: sortedItems, requestSort, sortConfig };
+};
+
+const ProductTable = (props) => {
+    const { items, requestSort, sortConfig } = useSortableData(props.products);
+    const getClassNamesFor = (name) => {
+        if (!sortConfig) {
+            return;
+        }
+        return sortConfig.key === name ? sortConfig.direction : undefined;
+    };
+    return (
+        <table id="table">
+            <thead>
+            <tr>
+                <th>
+                    <button
+                        type="button"
+                        onClick={() => requestSort("id")}
+                        className={getClassNamesFor("id")}
+                    >
+                        ID
+                    </button>
+                </th>
+                <th>
+                    <button
+                        type="button"
+                        onClick={() => requestSort("name")}
+                        className={getClassNamesFor("name")}
+                    >
+                        Name
+                    </button>
+                </th>
+                <th>
+                    <button
+                        type="button"
+                        onClick={() => requestSort("nametype")}
+                        className={getClassNamesFor("nametype")}
+                    >
+                        Name Type
+                    </button>
+                </th>
+                <th>
+                    <button
+                        type="button"
+                        onClick={() => requestSort("recclass")}
+                        className={getClassNamesFor("recclass")}
+                    >
+                        RecClass
+                    </button>
+                </th>
+                <th>
+                    <button
+                        type="button"
+                        onClick={() => requestSort("year")}
+                        className={getClassNamesFor("year")}
+                    >
+                        Year
+                    </button>
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            {items.map((item) => (
+                <tr key={item.id}>
+                    <td>{item.id}</td>
+                    <td>{item.name}</td>
+                    <td>{item.nametype}</td>
+                    <td>{item.recclass}</td>
+                    <td>{item.year}</td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+    );
+};
+
+
+
+export default function App() {
+    let [apiRes, setApiRes] = React.useState([]);
+    let res;
+    React.useEffect(() => {
+        (async () => {
+            const result = await axios(url);
+            setApiRes(result.data);
+        })();
+    }, []);
+
+    return (
+        <div className="App">
+            <ProductTable
+                products={apiRes}
+            />
+        </div>
+    );
 }
-export default App;
