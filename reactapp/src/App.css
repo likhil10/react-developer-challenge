@@ -27,6 +27,17 @@
   height: 100%;
 }
 
+#select {
+  height: 20px;
+  margin: 30px;
+  width: 150px;
+}
+
+#selectText {
+  margin: 30px;
+  width: 150px;
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;
